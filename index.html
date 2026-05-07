@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语词根查询</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+.container{max-width:800px;margin:0 auto;padding:40px 20px}
+h1{text-align:center;font-size:28px;margin-bottom:8px;color:#2c3e50}
+.subtitle{text-align:center;color:#94a3b8;margin-bottom:32px;font-size:14px}
+.search-wrap{position:relative;margin-bottom:32px}
+.search-wrap input{width:100%;padding:14px 18px;font-size:16px;border:2px solid #e2e8f0;border-radius:12px;outline:none;transition:.2s;background:#fff}
+.search-wrap input:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.15)}
+.search-wrap input::placeholder{color:#94a3b8}
+.stats{text-align:center;color:#94a3b8;font-size:13px;margin-bottom:16px}
+.roots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{background:#fff;border-radius:10px;padding:16px;border:1px solid #e8ecf1;transition:.15s}
+.card:hover{border-color:#c7d2fe;box-shadow:0 2px 8px rgba(99,102,241,.08)}
+.card .root{font-size:17px;font-weight:700;color:#6366f1;margin-bottom:4px;font-family:"SF Mono","Fira Code","Consolas",monospace}
+.card .meaning{font-size:14px;color:#475569;margin-bottom:6px}
+.card .examples{font-size:12px;color:#94a3b8}
+.card mark{background:#fef08a;color:#333;padding:0 2px;border-radius:2px}
+.empty{text-align:center;padding:60px 20px;color:#94a3b8}
+.empty .icon{font-size:48px;margin-bottom:12px}
+.empty p{font-size:15px}
+.empty .online-links{margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0}
+.empty .online-links p{font-size:13px;margin-bottom:12px}
+.empty .online-links a{display:inline-block;margin:0 8px 8px;padding:10px 20px;border-radius:8px;font-size:14px;text-decoration:none;transition:.15s;color:#fff}
+.empty .online-links .link-etym{background:#6366f1}
+.empty .online-links .link-etym:hover{background:#4f46e5}
+.empty .online-links .link-wikt{background:#0891b2}
+.empty .online-links .link-wikt:hover{background:#0e7490}
+.online-hint{text-align:center;margin-top:28px;padding:16px;border-radius:10px;background:#f8fafc;border:1px dashed #cbd5e1;font-size:13px;color:#64748b}
+.online-hint a{color:#6366f1;text-decoration:none;font-weight:600}
+.online-hint a:hover{text-decoration:underline}
+@media(max-width:500px){.container{padding:24px 16px}.roots-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📖 英语词根查询</h1>
+<p class="subtitle">输入词根快速查询含义与示例单词</p>
+<div class="search-wrap">
+<input type="text" id="searchInput" placeholder="输入词根，如 bio, graph, aud..." autofocus>
+</div>
+<div class="stats" id="stats">共 <strong>111</strong> 个词根</div>
+<div class="roots-grid" id="rootsGrid"></div>
+</div>
+<script>
+const roots=[
+{root:"act/ag",meaning:"做, 行动, 驱使",examples:"action, agent, active"},
+{root:"aud",meaning:"听",examples:"audio, audience, auditorium"},
+{root:"auto",meaning:"自己, 自身",examples:"automatic, autobiography, automobile"},
+{root:"bell",meaning:"战争",examples:"rebel, rebellious, belligerent"},
+{root:"bene",meaning:"好, 善",examples:"benefit, benevolent, beneficial"},
+{root:"bio",meaning:"生命",examples:"biology, biography, antibiotic"},
+{root:"chron",meaning:"时间",examples:"chronic, chronicle, synchronize"},
+{root:"cide/cis",meaning:"杀, 切",examples:"suicide, incision, pesticide"},
+{root:"clam/claim",meaning:"喊叫, 呼喊",examples:"exclaim, proclaim, clamor"},
+{root:"cogn",meaning:"知道",examples:"recognize, cognition, incognito"},
+{root:"corp",meaning:"身体",examples:"corporation, corpse, incorporate"},
+{root:"cosm",meaning:"宇宙, 秩序",examples:"cosmic, cosmos, microcosm"},
+{root:"cred",meaning:"相信",examples:"credit, credible, incredible"},
+{root:"cycl",meaning:"圆, 轮",examples:"bicycle, cycle, cyclone"},
+{root:"dem/demo",meaning:"人民",examples:"democracy, demographic, epidemic"},
+{root:"dict",meaning:"说, 断言",examples:"predict, dictionary, dictate"},
+{root:"domin",meaning:"主人, 支配",examples:"dominate, domain, dominion"},
+{root:"duc/duct",meaning:"引导, 带领",examples:"conduct, produce, educate"},
+{root:"dyn/dynam",meaning:"力量",examples:"dynamic, dynasty, dynamite"},
+{root:"erg/urg",meaning:"工作",examples:"energy, ergonomic, metallurgy"},
+{root:"fac/fact",meaning:"做, 制作",examples:"factory, manufacture, factor"},
+{root:"fer",meaning:"携带, 承载",examples:"transfer, refer, conference"},
+{root:"fid",meaning:"信任, 忠诚",examples:"confide, confident, fidelity"},
+{root:"fin",meaning:"结束, 界限",examples:"finish, finite, define"},
+{root:"flect/flex",meaning:"弯曲",examples:"reflect, flexible, deflect"},
+{root:"form",meaning:"形状",examples:"reform, transform, uniform"},
+{root:"gen",meaning:"出生, 种族, 种类",examples:"generate, generous, gene"},
+{root:"geo",meaning:"地球, 土地",examples:"geography, geology, geometry"},
+{root:"grad/gress",meaning:"步, 走",examples:"progress, graduate, gradual"},
+{root:"graph/gram",meaning:"写, 画",examples:"autograph, photograph, grammar"},
+{root:"helio",meaning:"太阳",examples:"heliocentric, helium, heliotrope"},
+{root:"hydr",meaning:"水",examples:"hydrogen, hydrate, hydraulic"},
+{root:"ject",meaning:"投, 扔",examples:"project, reject, inject"},
+{root:"jud",meaning:"判断",examples:"judicial, prejudice, judge"},
+{root:"junct",meaning:"连接",examples:"conjunction, junction, adjunct"},
+{root:"jur/jus",meaning:"法律, 权利",examples:"justice, jury, justify"},
+{root:"labor",meaning:"工作",examples:"labor, collaborate, elaborate"},
+{root:"leg/lect",meaning:"读, 选择",examples:"collect, select, lecture"},
+{root:"liber",meaning:"自由",examples:"liberty, liberal, liberate"},
+{root:"log/logue",meaning:"词, 言语",examples:"dialogue, logic, prologue"},
+{root:"luc/lum",meaning:"光",examples:"illuminate, luminous, translucent"},
+{root:"magn",meaning:"大, 伟大",examples:"magnificent, magnify, magnitude"},
+{root:"mal",meaning:"坏, 恶",examples:"malfunction, malice, malnutrition"},
+{root:"man/manu",meaning:"手",examples:"manual, manipulate, manuscript"},
+{root:"mand",meaning:"命令",examples:"command, demand, mandatory"},
+{root:"mar",meaning:"海洋",examples:"marine, submarine, maritime"},
+{root:"mater/matr",meaning:"母亲",examples:"maternal, matriarchy, matrix"},
+{root:"medi",meaning:"中间",examples:"medium, mediate, medieval"},
+{root:"memor",meaning:"记忆",examples:"memory, memorial, remember"},
+{root:"ment",meaning:"心智",examples:"mental, mention, comment"},
+{root:"migr",meaning:"移动, 迁移",examples:"migrate, immigrant, migrant"},
+{root:"miss/mit",meaning:"发送",examples:"mission, admit, transmit"},
+{root:"mob/mot",meaning:"移动",examples:"mobile, motion, motive"},
+{root:"morph",meaning:"形状, 形态",examples:"metamorphosis, morphology, amorphous"},
+{root:"mort",meaning:"死亡",examples:"mortal, immortal, mortify"},
+{root:"mut",meaning:"变化",examples:"mutate, mutual, mutation"},
+{root:"nat",meaning:"出生",examples:"native, nation, nature"},
+{root:"nav",meaning:"船",examples:"navy, navigate, naval"},
+{root:"neg",meaning:"否认",examples:"negative, neglect, negotiate"},
+{root:"nomen",meaning:"名字",examples:"nominal, nominate, denomination"},
+{root:"nov",meaning:"新",examples:"novel, innovate, novice"},
+{root:"omni",meaning:"全, 所有",examples:"omnipotent, omniscient, omnivore"},
+{root:"oper",meaning:"工作, 操作",examples:"operate, cooperate, opera"},
+{root:"pac",meaning:"和平",examples:"pacify, pacific, pact"},
+{root:"path",meaning:"感受, 疾病",examples:"sympathy, empathy, pathology"},
+{root:"pater/patr",meaning:"父亲",examples:"paternal, patriot, patron"},
+{root:"ped",meaning:"脚",examples:"pedal, pedestrian, pedestal"},
+{root:"pel/puls",meaning:"驱使, 推",examples:"propel, expel, impulse"},
+{root:"pend",meaning:"悬挂, 称重",examples:"depend, suspend, pendulum"},
+{root:"phil",meaning:"爱",examples:"philosophy, philharmonic, philanthropy"},
+{root:"phon",meaning:"声音",examples:"telephone, symphony, microphone"},
+{root:"photo",meaning:"光",examples:"photograph, photosynthesis, photon"},
+{root:"phys",meaning:"自然, 身体",examples:"physics, physical, physician"},
+{root:"plic",meaning:"折叠, 纠缠",examples:"complicate, explicit, duplicate"},
+{root:"pon/pos",meaning:"放置",examples:"postpone, position, compose"},
+{root:"popul",meaning:"人民",examples:"popular, population, populace"},
+{root:"port",meaning:"携带",examples:"transport, export, portable"},
+{root:"potent",meaning:"力量, 能力",examples:"potential, omnipotent, potent"},
+{root:"psych",meaning:"心灵, 灵魂",examples:"psychology, psychic, psychedelic"},
+{root:"reg/rect",meaning:"统治, 直",examples:"regulate, correct, direct"},
+{root:"rupt",meaning:"打破",examples:"interrupt, erupt, rupture"},
+{root:"sanct",meaning:"神圣",examples:"sanctify, sanctuary, saint"},
+{root:"sci",meaning:"知道",examples:"science, conscious, omniscient"},
+{root:"scop",meaning:"看, 观察",examples:"microscope, telescope, scope"},
+{root:"scrib/script",meaning:"写",examples:"describe, manuscript, scribble"},
+{root:"sect",meaning:"切, 割",examples:"section, dissect, intersection"},
+{root:"sens/sent",meaning:"感觉",examples:"sense, sentiment, sensitive"},
+{root:"sequ/secut",meaning:"跟随",examples:"sequence, consequence, consecutive"},
+{root:"sol",meaning:"单独, 太阳",examples:"solo, solitary, solar"},
+{root:"solv/solu",meaning:"松开, 解决",examples:"solve, dissolve, solution"},
+{root:"soph",meaning:"智慧",examples:"philosophy, sophisticated, sophistry"},
+{root:"spec/spect",meaning:"看",examples:"inspect, respect, spectator"},
+{root:"spir",meaning:"呼吸",examples:"inspire, respiration, spirit"},
+{root:"struct",meaning:"建造",examples:"construct, destroy, structure"},
+{root:"sum/summ",meaning:"总计, 最高",examples:"summary, summit, sum"},
+{root:"tact/tang",meaning:"触摸",examples:"contact, tangible, intact"},
+{root:"temp",meaning:"时间",examples:"temporary, contemporary, tempo"},
+{root:"terr",meaning:"土地, 地球",examples:"territory, terrain, terrestrial"},
+{root:"therm",meaning:"热",examples:"thermal, thermometer, thermos"},
+{root:"tract",meaning:"拉, 抽",examples:"attract, extract, contract"},
+{root:"uni",meaning:"一, 单一",examples:"universal, uniform, unity"},
+{root:"vac",meaning:"空",examples:"vacuum, vacant, vacation"},
+{root:"val",meaning:"强, 价值",examples:"value, valid, equivalent"},
+{root:"ven/vent",meaning:"来, 到来",examples:"prevent, event, adventure"},
+{root:"ver",meaning:"真实",examples:"verify, verdict, version"},
+{root:"verb",meaning:"词, 言语",examples:"verbal, verbose, proverb"},
+{root:"vis/vid",meaning:"看",examples:"vision, video, visible"},
+{root:"vit/viv",meaning:"生命",examples:"vital, vivid, survive"},
+{root:"voc/vok",meaning:"呼唤, 声音",examples:"voice, vocation, invoke"},
+{root:"volv/volut",meaning:"卷, 转",examples:"evolve, revolution, involve"},
+{root:"zoo",meaning:"动物",examples:"zoology, zoo, protozoan"}
+];
+function encodeQuery(s){return encodeURIComponent(s.trim())}
+function highlight(text,query){
+if(!query)return text;
+const re=new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');
+return text.replace(re,'<mark>$1</mark>');
+}
+function onlineLinks(q){
+const e=encodeQuery(q);
+return '<div class="online-links"><p>在以下在线词典继续搜索：</p>'
++'<a class="link-etym" href="https://www.etymonline.com/search?q='+e+'" target="_blank">📖 etymonline</a>'
++'<a class="link-wikt" href="https://en.wiktionary.org/wiki/'+e+'" target="_blank">📖 Wiktionary</a></div>';
+}
+function render(query){
+const q=query.trim().toLowerCase();
+const filtered=q?roots.filter(r=>r.root.toLowerCase().includes(q)||r.meaning.includes(q)):roots;
+const grid=document.getElementById('rootsGrid');
+if(filtered.length===0){
+grid.innerHTML='<div class="empty"><div class="icon">🔍</div><p>本地词根库未找到 "<strong>'+query+'</strong>"</p>'+onlineLinks(query)+'</div>';
+document.getElementById('stats').textContent='共 '+roots.length+' 个词根 · 未找到匹配';
+return;
+}
+document.getElementById('stats').innerHTML='共 <strong>'+roots.length+'</strong> 个词根 · 匹配 <strong>'+filtered.length+'</strong> 个';
+grid.innerHTML=filtered.map(r=>'<div class="card"><div class="root">'+highlight(r.root,q)+'</div><div class="meaning">'+highlight(r.meaning,q)+'</div><div class="examples">'+highlight(r.examples,q)+'</div></div>').join('')
++'<div class="online-hint">没找到想要的？<a href="https://www.etymonline.com/search?q='+encodeQuery(query)+'" target="_blank">去 etymonline 查询</a> · <a href="https://en.wiktionary.org/wiki/'+encodeQuery(query)+'" target="_blank">Wiktionary</a></div>';
+}
+document.getElementById('searchInput').addEventListener('input',function(){render(this.value)});
+render('');
+</script>
+</body>
+</html>
